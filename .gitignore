@@ -1,5 +1,4 @@
 /.venv
-/answer
 .env
 /data
 __pycache__
