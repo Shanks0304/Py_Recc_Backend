@@ -1,0 +1,7 @@
+/.venv
+/answer
+.env
+/data
+__pycache__
+pinecone.py
+transcript.py_
