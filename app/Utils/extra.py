@@ -59,6 +59,7 @@ def nullCheck(data: str):
             return data
 
 def convert_media_to_dict(item, idx):
+    # print(item)
     try:
         # if not check_media(item):
         #     return {}
@@ -97,15 +98,17 @@ def convert_place_to_dict(item):
         # print(serp_image_result)
         # print(serp_result)
 
-        image = serp_image_result[' '.join(item)]
-        map_image = serp_result[' '.join(item)]
+        # image = serp_image_result[' '.join(item)]
+        map_launch = serp_result[' '.join(item)][0]
+        map_title = serp_result[' '.join(item)][1]
+        map_image = serp_result[' '.join(item)][2]
         result = {
             "Category": item[0],
-            "Title": nullCheck(item[1]),
+            "Title": map_title,
             "Author": nullCheck(item[2]),
             "Description": item[3],
-            "imgURL": image,
-            "launchURL": map_image,
+            "imgURL": map_image,
+            "launchURL": map_launch,
             "authorURL": "",
         }
         return result
@@ -125,13 +128,15 @@ def convert_place_to_dict(item):
         print("convert place to dict error!")
         return result
 
-serp_list = []
 serp_result = {}
-serp_image_result = {}
-google_list = []
+# serp_image_result = {}
+# serp_title_result = {}
+
 google_result = {}
 google_author_result = {}
 google_image_result = {}
+
+
 
 
 async def fetch_serp_results(session, query):
@@ -152,7 +157,7 @@ async def fetch_serp_results(session, query):
                 # print(results)
         except Exception as error:
             print(error)
-
+    
         first_place = results.get('place_results')
         if not first_place:
             first_place = results.get('local_results')[0]
@@ -172,10 +177,13 @@ async def fetch_serp_results(session, query):
                     results = await response.json()
             except Exception as error:
                 print(error)
+            # print(results)
             map_url = results['search_metadata']['google_maps_url']
             if substring_to_replace in map_url:
                 map_url = map_url.replace(substring_to_replace, substring_to_replace + f"@{lat},{lng},17z/")
-            serp_result[' '.join(query)] = map_url
+            serp_result[' '.join(query)] = [map_url]
+            serp_result[' '.join(query)].append(results['place_results']['title'])
+            
             photo_params = {
                 "engine": "google_maps_photos",
                 "data_id": data_id,
@@ -187,7 +195,8 @@ async def fetch_serp_results(session, query):
             except Exception as error:
                 print(error)
             photo_url = results['photos'][0]['image']
-            serp_image_result[' '.join(query)] = photo_url
+            # serp_image_result[' '.join(query)] = photo_url
+            serp_result[' '.join(query)].append(photo_url)
             # print("photo_url: ", photo_url)
             # print(serp_image_result[query])
             #print(serp_result[query])
@@ -198,7 +207,7 @@ async def fetch_serp_results(session, query):
 cx = os.getenv("CX_ID")
 
 async def fetch_google_results(session, query, flag):
-    alter_query = ' '.join(tuple(query[0:2])) + ' IMDB' if query[0] == 'movie' else ' '.join(tuple(query[0:2]))
+    alter_query = ' '.join(tuple(query[0:3])) + ' IMDB' if query[0] == 'movie' else ' '.join(tuple(query[0:3]))
     params = {
         'q': alter_query,
         'cx': cx,
@@ -217,9 +226,9 @@ async def fetch_google_results(session, query, flag):
             google_image_result[' '.join(query)] = results['items'][0]['link']
             # print("image: ", results['items'][0]['link'])
         else:
+            # print(results)
             google_result[' '.join(query)] = results['items'][0]['link']
-            # print("results: ", results)
-            # print("google: ", results['items'][0]['link'])
+
     except Exception as error:
         print("fetch google result error:", error)
         if flag:
@@ -228,7 +237,7 @@ async def fetch_google_results(session, query, flag):
             google_result[' '.join(query)] = "https://www.lifespanpodcast.com/content/images/2022/01/Welcome-Message-Title-Card-2.jpg"
 
 async def fetch_google_author_results(session, query):
-    alter_query = ' '.join(tuple(query[0:3])) + ' IMDB' if query[0] == 'movie' else ' '.join(tuple(query[0:3]))
+    alter_query = ' '.join(tuple(query[0:2])) + ' IMDB' if query[0] == 'movie' else ' '.join(tuple(query[0:2]))
     params = {
         'q': alter_query,
         'cx': cx,
@@ -237,6 +246,7 @@ async def fetch_google_author_results(session, query):
     try:
         async with session.get("https://www.googleapis.com/customsearch/v1", params=params) as response:
             results = await response.json()
+        print(results)
         google_author_result[' '.join(query)] = results['items'][0]['link']
     except Exception as error:
         print('author result error:', error)
@@ -276,11 +286,11 @@ async def get_all_url_for_profile(apiResponse, typeCheckflag):
                 tasks.append(task)
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-def insert_item_to_serp_list(item):
-    serp_list.append(item[2] + ' ' + item[1] + ' ' + item[0])
+# def insert_item_to_serp_list(item):
+#     serp_list.append(item[2] + ' ' + item[1] + ' ' + item[0])
     
-def insert_item_to_google_list(item):
-    google_list.append(item)
+# def insert_item_to_google_list(item):
+#     google_list.append(item)
 
 async def update_answer(apiResponse, typeCheckflag):
     answer = {'media': []}

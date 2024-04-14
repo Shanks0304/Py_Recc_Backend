@@ -46,13 +46,13 @@ def extract_mentioned_data(url: str = Form(...)):
     # content = extract_data(transcript)
     result = asyncio.run(complete_youtube(transcript))
     #print(result)
-    if 'media' in result:
-        current_category = "---"
-        for item in result['media']:
-            if item["Category"] == current_category:
-                item["Category"] = ""
-            else:
-                current_category = item["Category"]
+    # if 'media' in result:
+    #     current_category = "---"
+    #     for item in result['media']:
+    #         if item["Category"] == current_category:
+    #             item["Category"] = ""
+    #         else:
+    #             current_category = item["Category"]
     result['author'] = author
     result['title'] = title
     result['url'] = url
