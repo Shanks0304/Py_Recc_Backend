@@ -4,3 +4,4 @@
 __pycache__
 pinecone.py
 transcript.py_
+extract_youtube.py

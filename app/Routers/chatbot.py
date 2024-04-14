@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Form, UploadFile, File, Request
 from app.Utils.transcript import extract_video_id, get_transcript_from_youtube, get_title_from_youtube
-from app.Utils.extract_keywords_YouTube import complete_profile, update_answer
-from app.Models.Chatbot_Model import check_already_searched, insert_url_database
 from app.Utils.elevenlabs import text_to_speech
-from app.Utils.extract_text import complete_text
+from app.Utils.extract_text import complete_text, complete_youtube
 import time
 import asyncio
 import os
@@ -46,7 +44,7 @@ def extract_mentioned_data(url: str = Form(...)):
     print(time.time() - start_time)
     print(transcript)
     # content = extract_data(transcript)
-    result = asyncio.run(complete_profile(transcript))
+    result = asyncio.run(complete_youtube(transcript))
     #print(result)
     if 'media' in result:
         current_category = "---"
@@ -58,7 +56,6 @@ def extract_mentioned_data(url: str = Form(...)):
     result['author'] = author
     result['title'] = title
     result['url'] = url
-    result['share_link'] = f"list02ProductsShare?url={url}"
 
     with open('./data/avatar.jpg', 'wb') as handle:
         response = requests.get(avatar_url, stream=True)

@@ -1,4 +1,4 @@
-from app.Database import db
+from app.db import db
 
 URL_DB = db.urls
 
