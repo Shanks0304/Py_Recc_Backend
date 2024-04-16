@@ -246,7 +246,7 @@ async def fetch_google_author_results(session, query):
     try:
         async with session.get("https://www.googleapis.com/customsearch/v1", params=params) as response:
             results = await response.json()
-        print(results)
+        # print(results)
         google_author_result[' '.join(query)] = results['items'][0]['link']
     except Exception as error:
         print('author result error:', error)
@@ -311,6 +311,7 @@ async def update_answer(apiResponse, typeCheckflag):
                     continue
                 else:
                     answer['media'].append(result)
+        
         return answer
     except Exception as e:
         print(e)
@@ -412,7 +413,43 @@ async def get_title(context: str):
         print(error)
         return {}
 
+def get_primary_category(context:str):
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4-0125-preview',
+            max_tokens=2000,
+            messages=[
+                {'role': 'system', 'content': "Get the 'media's from the input content."},
+                {'role': 'user', 'content': f"""
+                    This is the input list of categories you have to analyze.
+                    {context}""" +
+                    """
+                    I'd like to summarize them:
+                    Sample output json format is below:
+                        {'book':['book', 'novel'], 'restaurant': ['canteen', 'restaurant', 'bar', 'cafe'], 'bookstore': 'bookstore', 'movie': 'movie'} etc.
+                    Remember on above sample, book, novel, canteen, restaurant, bar and cafe should be all in the input context.
+                    You must generate the output according to the input context.
+                    and you should not create new items, and there should not be items which are not mentioned in the input context.
+                    You should output this type.
+                    """
+                }
+            ],
+            seed= 4826,
+            temperature = 0.5,
+            response_format={"type": "json_object"}
+        )
+        response_message = response.choices[0].message.content
+        json_response = json.loads(response_message)
+        print(json_response)
+        print(type(json_response))
+        return json_response
+    except Exception as e:
+        print(e)
+        print("hello")
+        return {}
+
 async def get_structured_media_answer(context: str):
+
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()
     print("media function is started")

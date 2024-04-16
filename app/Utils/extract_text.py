@@ -23,8 +23,21 @@ async def complete_youtube(context: str):
     media_result = await get_structured_media_answer(context)
     place_result = await get_structured_place_answer(context)
     # Combine the results into a single dictionary.
-    result = {
+    temp_result = {
         'media': media_result['media'] + place_result['media']
     }
+
+    new_dict = {}
+    for item in temp_result['media']:
+        new_item = {
+            k: item[k] for k in ["Title", "Author", "Description", "imgURL", "launchURL", "authorURL"]
+        }
+        if item['Category'] not in new_dict:
+            new_dict[item['Category']] = [new_item]
+        else:
+            new_dict[item['Category']].append(new_item)
+
+    # print(new_dict)
+    result = {'media': new_dict}
     print("YouTube total time: ", time.time() - current_time)
     return result
