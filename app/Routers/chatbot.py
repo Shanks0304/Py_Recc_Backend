@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form, UploadFile, File, Request
 from app.Utils.transcript import extract_video_id, get_transcript_from_youtube, get_title_from_youtube
 from app.Utils.elevenlabs import text_to_speech
-from app.Utils.extract_text import complete_text, complete_youtube
+from app.Utils.extract_text import complete_text, complete_text_test, complete_youtube
 import time
 import asyncio
 import os
@@ -74,6 +74,15 @@ def extract_mentioned_data(url: str = Form(...)):
     return result
 
 
+# test processing
+@router.post("/v2/extract_text_data")
+async def extract_text_data(text: str = Form(...)):
+    start_time = time.time()
+    print(time.time() - start_time)
+    result = await complete_text_test(text)
+    return result
+
+
 # plain text processing
 @router.post("/extract_text_data")
 async def extract_text_data(text: str = Form(...)):
@@ -81,7 +90,6 @@ async def extract_text_data(text: str = Form(...)):
     print(time.time() - start_time)
     result = await complete_text(text)
     return result
-
 
 
 @router.post("/transcript-audio-file")

@@ -93,6 +93,40 @@ def convert_media_to_dict(item, idx):
         print("convert media to dict error!")
         return result
 
+def convert_media_to_dict_test(item, idx):
+    # print(item)
+    try:
+        # if not check_media(item):
+        #     return {}
+        title = google_result[' '.join(item)]
+        author = google_author_result[' '.join(item)]
+        image = google_image_result[' '.join(item)]
+        result = {
+            "Category": item[0],
+            "Title": nullCheck(item[1]),
+            "Author": nullCheck(item[2]),
+            "Description": item[3],
+            "imgURL": image,
+            "launchURL": title,
+            "authorURL": author,
+        }
+        return result
+    except Exception as e:
+        print(e)
+        result = {
+            "Category": "OpenAI Server Error",
+            "Title": "OpenAI Server Error",
+            "Title_Source": "",
+            "Author": "OpenAI Server Error",
+            "Author_Source": "",
+            "Description": "OpenAI Server Error",
+            "Image": "",
+            "Launch_URL": "",
+            "Key":""
+        }
+        print("convert media to dict error!")
+        return result
+
 def convert_place_to_dict(item):
     try:     
         # print(serp_image_result)
@@ -135,9 +169,6 @@ serp_result = {}
 google_result = {}
 google_author_result = {}
 google_image_result = {}
-
-
-
 
 async def fetch_serp_results(session, query):
     alt_query = ' '.join(tuple(query[0:3]))
@@ -287,19 +318,18 @@ async def get_all_url_for_profile(apiResponse, typeCheckflag):
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
 # def insert_item_to_serp_list(item):
-#     serp_list.append(item[2] + ' ' + item[1] + ' ' + item[0])
-    
+#     serp_list.append(item[2] + ' ' + item[1] + ' ' + item[0])   
 # def insert_item_to_google_list(item):
 #     google_list.append(item)
 
-async def update_answer(apiResponse, typeCheckflag):
+async def update_answer(apiResponse, typeCheckflag:str, test:bool):
     answer = {'media': []}
     try:
         await get_all_url_for_profile(apiResponse, typeCheckflag)
         print("update_answer() is started")
         if typeCheckflag == 'media':
             for index, item in enumerate(apiResponse['media']):
-                result = convert_media_to_dict(item, index)
+                result = convert_media_to_dict_test(item, index) if test else convert_media_to_dict(item, index)
                 if not result:
                     continue
                 else:
@@ -448,7 +478,7 @@ def get_primary_category(context:str):
         print("hello")
         return {}
 
-async def get_structured_media_answer(context: str):
+async def get_structured_media_answer(context: str, test: bool):
 
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()
@@ -492,7 +522,7 @@ async def get_structured_media_answer(context: str):
         print("hello")
         return {}
     try:
-        answer = await update_answer(json_response, 'media')
+        answer = await update_answer(json_response, 'media', test)
         return answer
     except Exception as error:
         print(error)
@@ -541,7 +571,7 @@ async def get_structured_place_answer(context: str):
         return {}
 
     try: 
-        answer = await update_answer(json_response,'place')
+        answer = await update_answer(json_response,'place', False)
         return answer
     except Exception as error:
         print(error)
