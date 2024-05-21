@@ -360,6 +360,137 @@ async def update_answer(apiResponse, typeCheckflag:str):
         print("update answer error!")
         return []
 
+
+async def get_structured_answer(context: str):
+    # Step 1: send the conversation and available functions to GPT
+    start_time = time.time()
+    # instructor = f"""
+    #     Get the mentioned media and place information from the body of the input content.
+    #     You have to provide me all of the mentioned medias and places such as book, movie, article, poscast, attractions, restaurant, museum, hotel, Tourist destination.
+    #     And then provide me detailed information about the category, author(only for media), subtitle(only for place), title, description about each media and place with your knowledge.
+    #     Don't forget to output author and description for each media.
+    #     Don't forget to output subtitle and description for each media.
+    #     You have to analyze below content carefully and then extract all medias and places mentioned in that content.
+    #     You shouldn't miss any one of the media and place such as book, movie, article, poscast, attractions, restaurant, museum, hotel, Tourist destination.
+    #     But you should extract medias both title and author of which you know already.
+    #     And you should extract all places.
+    # """
+
+    instructor = f"""
+        Get the media and places information from input content.
+    """
+    functions = [
+        {
+            'name': 'extract_info',
+            'description': f"{instructor}",
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    "media": {
+                        'type': 'array',
+                        # 'description': "Extract all of the mentioned medias such as book, movie, article, podcast in the body of the input text and description about them with your knowledge. All items must have Category, Title, Author, Description properties.",
+                        'description': "Extract all of the mentioned media you find from the input content such as book, movie, article, podcast in the input text and description about them with your knowledge. Each item must have Category, Title, Author(only for media, neccessary), Description(perhaps it would be your knowledge) properties.",
+                        'items': { 
+                            'type': 'object',
+                            'properties': {
+                                'Category': {
+                                    'type': 'string',
+                                    'description': 'The most suitable category of the media. Such as book, movie, article, podcast.'
+                                },
+                                'Title': {
+                                    'type': 'string',
+                                    'description': "This item can't contain the content of not specified or not mentioned but only exact name of title for this media. You must come up with it with your own knowledge only if title of which is not mentioned in the input context. If you don't know the exact title, you should print 'unknown'."
+                                },
+                                'Author': {
+                                    'type': 'string',
+                                    'description': "In case of movie please provide any director or creator. Don't say you don't know it. You must come up with it with your own knowledge if author of which is not mentioned in the input context. If you don't know the exact author, you should find the Google search and extrach accurate author and if there is no result even in Google then print 'unknown'."
+                                },
+                                # 'Description': {
+                                #     'type': 'string',
+                                #     'description': "Detailed description about each media mentioned in input text. This item must contain detailed description about each media. Output as much as possible with your own knowledge as well as body of above text."
+                                # },
+                            }
+                        }
+                    },
+                    "place": {
+                        'type': 'array',
+                        # 'description': "Extract all of the mentioned places such as retaurant, hotel, museum, Tourist destination in the body of the input text and description about that with your knowledge.  All items must have Category, Title, Subtitle, Description properties.",
+                        'description': "Extract all of the mentioned places you find from the input content such as retaurant, hotel, museum, Tourist destination in the body of the input content and description about them with your knowledge. Each item must have Category, Title, Subtitle, Description properties." ,
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'Category': {
+                                    'type': 'string',
+                                    'description': 'The most suitable category of the place. Such as retaurant, hotel, museum, Tourist destination and etc. '
+                                },
+                                'Title': {
+                                    'type': 'string',
+                                    'description': "This item can't contain the content of not specified or not mentioned but only exact name for this place. But don't say unknown or you don't know it. You must come up with it with your own knowledge only if title of which is not mentioned in the input context. If you don't know the exact title, you should print 'unknown'."
+                                },
+                                'Subtitle': {
+                                    'type': 'string',
+                                    'description': "Suitable subtitle of given place such as simple introduction. If this subtitle doesn't mentioned in the input, you should create with your knowledge. For example, for the hotel, it can be 5-star tourist hotel and for restaurant, it can be Haute French restaurant."
+                                },
+                                # 'Description': {
+                                #     'type': 'string',
+                                #     'description': "Detailed description about each place mentioned in input text. This item must contain detailed description about each place. Output as much as possible with your own knowledge as well as body of above text."
+                                # },
+                            }
+                        }
+                    }
+                }
+
+            }
+        },
+    ]
+
+    print('here2')
+
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4-1106-preview',
+            max_tokens=2000,
+            messages=[
+                {'role': 'system', 'content': instructor},
+                # {'role': 'user', 'content': f"""
+                #     This is the input content you have to analyze.
+                #     {context}
+                #     Please provide me the data about places and media such as books, movies, articles, podcasts, attractions, restaurant, hotel, museum,  mentioned above.
+                #     Please output the data with your own knowledge focusing on category, title, author, subtitle.
+
+                # """}
+                {'role': 'user', 'content': f"""
+                    This is the input content you have to analyze.
+                    {context}                    
+                """}
+            ],
+            seed=2425,
+            functions=functions,
+            function_call={"name": "extract_info"}
+        )
+        response_message = response.choices[0].message
+        system_fingerprint = response.system_fingerprint
+        print(system_fingerprint)
+        current_time = time.time()
+        print("Elapsed Time: ", current_time - start_time)
+        if hasattr(response_message, "function_call"):
+            # print("response_message: ",
+            #       response_message.function_call.arguments)
+            json_response = json.loads(
+                response_message.function_call.arguments)
+            print(json_response)
+            answer = await update_answer(json_response)
+
+            return {"transcript": transcript, "media": answer}
+        else:
+            print("function_call_error!\n")
+            return {}
+    except Exception as e:
+        print(e)
+        print("hello")
+        return {}
+
+
 async def get_structured_answer_not_functionCalling(context: str):
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()  
