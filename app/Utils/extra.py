@@ -1,4 +1,4 @@
-from app.Utils.google_API import get_source_url, get_image_url, get_map_image_url
+from ..Utils.google_API import get_source_url, get_image_url, get_map_image_url
 import time
 import json
 import tiktoken
@@ -35,65 +35,61 @@ def unique_list(l):
     [ulist.append(x) for x in l if x not in ulist]
     return ulist
 
-def get_localImageURL(category, url, idx):
-    if not os.path.exists("./data/text"):
-        os.makedirs("./data/text")
-    with open(f"./data/text/{category}_{idx}.jpg", 'wb') as handle:
-        response = requests.get(url, stream=True, headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'})
-        if not response.ok:
-            print(response)
-        for block in response.iter_content(1024):
-            if not block:
-                break
-            handle.write(block)
+# def get_localImageURL(category, url, idx):
+#     if not os.path.exists("./data/text"):
+#         os.makedirs("./data/text")
+#     with open(f"./data/text/{category}_{idx}.jpg", 'wb') as handle:
+#         response = requests.get(url, stream=True, headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'})
+#         if not response.ok:
+#             print(response)
+#         for block in response.iter_content(1024):
+#             if not block:
+#                 break
+#             handle.write(block)
 
 def nullCheck(data: str):
-    match data.lower():
-        case 'n/a':
-            return ''
-        case 'not applicable':
-            return ''
-        case 'unknown':
-            return ''
-        case _:
-            return data
+    lowered_data = data.lower()
+    if lowered_data == 'n/a' or lowered_data == 'not applicable' or lowered_data == 'unknown':
+        return ''
+    else:
+        return data
+
+# def convert_media_to_dict(item, idx):
+#     # print(item)
+#     try:
+#         # if not check_media(item):
+#         #     return {}
+#         title = google_result[' '.join(item)]
+#         # get_localImageURL('media', google_image_result[' '.join(item)], idx)
+#         author = google_author_result[' '.join(item)]
+#         image = f"https://api.recc.ooo/static/text/media_{idx}.jpg"
+#         result = {
+#             "Category": item[0],
+#             "Title": nullCheck(item[1]),
+#             "Author": nullCheck(item[2]),
+#             "Description": item[3],
+#             "imgURL": image,
+#             "launchURL": title,
+#             "authorURL": author,
+#         }
+#         return result
+#     except Exception as e:
+#         print(e)
+#         result = {
+#             "Category": "OpenAI Server Error",
+#             "Title": "OpenAI Server Error",
+#             "Title_Source": "",
+#             "Author": "OpenAI Server Error",
+#             "Author_Source": "",
+#             "Description": "OpenAI Server Error",
+#             "Image": "",
+#             "Launch_URL": "",
+#             "Key":""
+#         }
+#         print("convert media to dict error!")
+#         return result
 
 def convert_media_to_dict(item, idx):
-    # print(item)
-    try:
-        # if not check_media(item):
-        #     return {}
-        title = google_result[' '.join(item)]
-        get_localImageURL('media', google_image_result[' '.join(item)], idx)
-        author = google_author_result[' '.join(item)]
-        image = f"https://api.recc.ooo/static/text/media_{idx}.jpg"
-        result = {
-            "Category": item[0],
-            "Title": nullCheck(item[1]),
-            "Author": nullCheck(item[2]),
-            "Description": item[3],
-            "imgURL": image,
-            "launchURL": title,
-            "authorURL": author,
-        }
-        return result
-    except Exception as e:
-        print(e)
-        result = {
-            "Category": "OpenAI Server Error",
-            "Title": "OpenAI Server Error",
-            "Title_Source": "",
-            "Author": "OpenAI Server Error",
-            "Author_Source": "",
-            "Description": "OpenAI Server Error",
-            "Image": "",
-            "Launch_URL": "",
-            "Key":""
-        }
-        print("convert media to dict error!")
-        return result
-
-def convert_media_to_dict_test(item, idx):
     # print(item)
     try:
         # if not check_media(item):
@@ -322,14 +318,14 @@ async def get_all_url_for_profile(apiResponse, typeCheckflag):
 # def insert_item_to_google_list(item):
 #     google_list.append(item)
 
-async def update_answer(apiResponse, typeCheckflag:str, test:bool):
+async def update_answer(apiResponse, typeCheckflag:str):
     answer = {'media': []}
     try:
         await get_all_url_for_profile(apiResponse, typeCheckflag)
         print("update_answer() is started")
         if typeCheckflag == 'media':
             for index, item in enumerate(apiResponse['media']):
-                result = convert_media_to_dict_test(item, index) if test else convert_media_to_dict(item, index)
+                result = convert_media_to_dict(item, index)
                 if not result:
                     continue
                 else:
@@ -341,7 +337,23 @@ async def update_answer(apiResponse, typeCheckflag:str, test:bool):
                     continue
                 else:
                     answer['media'].append(result)
-        
+        category_list = []
+        for recc in answer['media']:
+            category_list.append(recc['Category'])
+        primary_categories = get_primary_category('\n'.join(category_list))
+        print(primary_categories)
+        item_to_primary = {}
+        for primary, items in primary_categories.items():
+            for item in items:
+                if item not in item_to_primary:
+                    item_to_primary[item] = []
+                if primary not in item_to_primary[item]:
+                    item_to_primary[item].append(primary)
+        print(item_to_primary)
+
+        for recc in answer['media']:
+            if recc['Category'] in item_to_primary:
+                recc['Primary_Category'] = item_to_primary[recc['Category']]
         return answer
     except Exception as e:
         print(e)
@@ -429,7 +441,7 @@ async def get_title(context: str):
         # print(type(response_message))
         print("title result is:", response_message)
         system_fingerprint = response.system_fingerprint
-        print("media_fingerprint: ", system_fingerprint)
+        # print("media_fingerprint: ", system_fingerprint)
         # print(randon_seed)
         print("Elapsed Time: ", time.time() - start_time)
     except Exception as e:
@@ -449,18 +461,17 @@ def get_primary_category(context:str):
             model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
-                {'role': 'system', 'content': "Get the 'media's from the input content."},
+                {'role': 'system', 'content': "please categorize items."},
                 {'role': 'user', 'content': f"""
-                    This is the input list of categories you have to analyze.
+                    primary categories are 'restaurant', 'hotel', 'shopping', 'entertainment', 'servicies', 'health & medical', 'travel', 'food', 'Automative', 'professional services', 'education', 'finance', 'home services',etc.
+                    This is the input list of items you have to categorize.
                     {context}""" +
                     """
-                    I'd like to summarize them:
-                    Sample output json format is below:
-                        {'book':['book', 'novel'], 'restaurant': ['canteen', 'restaurant', 'bar', 'cafe'], 'bookstore': 'bookstore', 'movie': 'movie'} etc.
-                    Remember on above sample, book, novel, canteen, restaurant, bar and cafe should be all in the input context.
-                    You must generate the output according to the input context.
-                    and you should not create new items, and there should not be items which are not mentioned in the input context.
-                    You should output this type.
+                    I'd like to categorize them on the basis of primary cateogry.
+                    output result is below:
+                     {primary_category1:[item1, item2, item3], primary_category2: [item4, item5, item6]}
+                    Don't need to use all the primary categories and you just show the primary categories which has proper items.
+                    You should output this type as JSON.
                     """
                 }
             ],
@@ -470,15 +481,13 @@ def get_primary_category(context:str):
         )
         response_message = response.choices[0].message.content
         json_response = json.loads(response_message)
-        print(json_response)
-        print(type(json_response))
         return json_response
     except Exception as e:
         print(e)
         print("hello")
         return {}
 
-async def get_structured_media_answer(context: str, test: bool):
+async def get_structured_media_answer(context: str):
 
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()
@@ -512,9 +521,9 @@ async def get_structured_media_answer(context: str, test: bool):
         response_message = response.choices[0].message.content
         json_response = json.loads(response_message)
         print(json_response)
-        print(type(json_response))
+        # print(type(json_response))
         system_fingerprint = response.system_fingerprint
-        print("media_fingerprint: ", system_fingerprint)
+        # print("media_fingerprint: ", system_fingerprint)
         # print(randon_seed)
         print("Elapsed Time: ", time.time() - start_time)
     except Exception as e:
@@ -522,7 +531,7 @@ async def get_structured_media_answer(context: str, test: bool):
         print("hello")
         return {}
     try:
-        answer = await update_answer(json_response, 'media', test)
+        answer = await update_answer(json_response, 'media')
         return answer
     except Exception as error:
         print(error)
@@ -571,7 +580,7 @@ async def get_structured_place_answer(context: str):
         return {}
 
     try: 
-        answer = await update_answer(json_response,'place', False)
+        answer = await update_answer(json_response,'place')
         return answer
     except Exception as error:
         print(error)

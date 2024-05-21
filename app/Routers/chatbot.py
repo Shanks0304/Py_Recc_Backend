@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form, UploadFile, File, Request
-from app.Utils.transcript import extract_video_id, get_transcript_from_youtube, get_title_from_youtube
-from app.Utils.elevenlabs import text_to_speech
-from app.Utils.extract_text import complete_text, complete_text_test, complete_youtube
+from ..Utils.transcript import extract_video_id, get_transcript_from_youtube, get_title_from_youtube
+from ..Utils.elevenlabs import text_to_speech
+from ..Utils.extract_text import complete_text, complete_youtube
 import time
 import asyncio
 import os
@@ -57,30 +57,30 @@ def extract_mentioned_data(url: str = Form(...)):
     result['title'] = title
     result['url'] = url
 
-    with open('./data/avatar.jpg', 'wb') as handle:
-        response = requests.get(avatar_url, stream=True)
-        if not response.ok:
-            print(response)
-        for block in response.iter_content(1024):
-            if not block:
-                break
-            handle.write(block)
+    # with open('./data/avatar.jpg', 'wb') as handle:
+    #     response = requests.get(avatar_url, stream=True)
+    #     if not response.ok:
+    #         print(response)
+    #     for block in response.iter_content(1024):
+    #         if not block:
+    #             break
+    #         handle.write(block)
 
     
-    result['avatar'] = 'https://api.recc.ooo/static/avatar.jpg'
+    result['avatar'] = avatar_url
     current_time = time.time()
     print("Total Time: ", current_time - start_time)
     # insert_url_database(url, result)
     return result
 
 
-# test processing
-@router.post("/v2/extract_text_data")
-async def extract_text_data(text: str = Form(...)):
-    start_time = time.time()
-    print(time.time() - start_time)
-    result = await complete_text_test(text)
-    return result
+# # test processing
+# @router.post("/v2/extract_text_data")
+# async def extract_text_data(text: str = Form(...)):
+#     start_time = time.time()
+#     print(time.time() - start_time)
+#     result = await complete_text_test(text)
+#     return result
 
 
 # plain text processing
