@@ -338,6 +338,15 @@ async def update_answer(apiResponse, typeCheckflag:str):
                 else:
                     answer['media'].append(result)
         category_list = []
+        #     "restaurant",
+        #     "unknown",
+        #     "conversation area",
+        #     "",
+        #     "grocery store",
+        #     "bakery",
+        #     "vinyl record",
+        #     "music band"
+        # ]
         for recc in answer['media']:
             category_list.append(recc['Category'])
         primary_categories = get_primary_category('\n'.join(category_list))
@@ -602,6 +611,7 @@ def get_primary_category(context:str):
                     output result is below:
                      {primary_category1:[item1, item2, item3], primary_category2: [item4, item5, item6]}
                     Don't need to use all the primary categories and you just show the primary categories which has proper items.
+                    Last one, remember you can not find out the proper primary category of specific item, then you should give 'other' as primary category.
                     You should output this type as JSON.
                     """
                 }
