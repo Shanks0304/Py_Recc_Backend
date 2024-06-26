@@ -369,7 +369,6 @@ async def update_answer(apiResponse, typeCheckflag:str):
         print("update answer error!")
         return []
 
-
 async def get_structured_answer(context: str):
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()
@@ -499,14 +498,13 @@ async def get_structured_answer(context: str):
         print("hello")
         return {}
 
-
-async def get_structured_answer_not_functionCalling(context: str):
+async def get_structured_answer_not_function_calling(context: str):
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()  
     print(tiktoken_len(context))
     try:
         response = client.chat.completions.create(
-            model='gpt-4-0125-preview',
+            model='gpt-4o',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the 'media's and 'place's from the input content in json, Dont' forget that the category of media must be the media type, not the place like restaurant, museum or other words associated to places. Dont' forget that category of place must be the place type, not the media like book, movies and other words associated to media type."},
@@ -558,7 +556,7 @@ async def get_title(context: str):
     print("get_title() is started")
     try:
         response = await title_client.chat.completions.create(
-            model='gpt-4-0125-preview',
+            model='gpt-4o',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the extracted title and brief overview from the input content."},
@@ -598,7 +596,7 @@ async def get_title(context: str):
 def get_primary_category(context:str):
     try:
         response = client.chat.completions.create(
-            model='gpt-4-0125-preview',
+            model='gpt-4o',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "please categorize items."},
@@ -635,7 +633,7 @@ async def get_structured_media_answer(context: str):
     print("media function is started")
     try:
         response = client.chat.completions.create(
-            model='gpt-4-0125-preview',
+            model='gpt-4o',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the 'media's from the input content."},
@@ -684,7 +682,7 @@ async def get_structured_place_answer(context: str):
     print("place function is started")
     try:
         response = client.chat.completions.create(
-            model='gpt-4-0125-preview',
+            model='gpt-4o',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get 'place's from the input content in json"},
@@ -726,3 +724,34 @@ async def get_structured_place_answer(context: str):
     except Exception as error:
         print(error)
         return {}
+
+def get_ocr_image_result(base64string):
+    print("Here's OCR process.")
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            max_tokens=300,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Get the whole text from this image"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64, {base64string}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        result = response.choices[0].message.content
+        print("OCR result: ", result)
+        return result
+    except Exception as error:
+        print("Error on OCR: ",  error)
+        return None

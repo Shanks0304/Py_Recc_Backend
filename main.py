@@ -30,4 +30,4 @@ async def root():
 
 # define the entry point. In the entry point, using uvicorn to run server
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=6000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=6100, reload=True)

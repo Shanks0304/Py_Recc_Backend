@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Form, UploadFile, File, Request
 from ..Utils.transcript import extract_video_id, get_transcript_from_youtube, get_title_from_youtube
 from ..Utils.elevenlabs import text_to_speech
-from ..Utils.extract_text import complete_text, complete_youtube
+from ..Utils.extract_text import complete_image, complete_text, complete_youtube
 import time
 import asyncio
 import os
 import shutil
-import requests
 
 router = APIRouter()
 
@@ -91,12 +90,23 @@ async def extract_text_data(text: str = Form(...)):
     result = await complete_text(text)
     return result
 
+# image text processing
+@router.post("/extract_image_data")
+async def extract_image_data(image: UploadFile = File(...)):
+    UPLOAD_DIRECTORY = "./data/images"
+    image_path = os.path.join(UPLOAD_DIRECTORY, image.filename)
+    with open(image_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    print("Image uploaded")
+    result = await complete_image(image_path)
+    # print(image_path)
+    return result
+
 
 @router.post("/transcript-audio-file")
 async def transcript_audio_file(file: UploadFile = File(...)):
     text_to_speech()
     print(file.filename)
-
     UPLOAD_DIRECTORY = "./data"
     file_location = os.path.join(UPLOAD_DIRECTORY, file.filename)
     with open(file_location, "wb") as buffer:
