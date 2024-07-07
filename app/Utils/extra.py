@@ -338,15 +338,6 @@ async def update_answer(apiResponse, typeCheckflag:str):
                 else:
                     answer['media'].append(result)
         category_list = []
-        #     "restaurant",
-        #     "unknown",
-        #     "conversation area",
-        #     "",
-        #     "grocery store",
-        #     "bakery",
-        #     "vinyl record",
-        #     "music band"
-        # ]
         for recc in answer['media']:
             category_list.append(recc['Category'])
         primary_categories = get_primary_category('\n'.join(category_list))
@@ -498,13 +489,13 @@ async def get_structured_answer(context: str):
         print("hello")
         return {}
 
-async def get_structured_answer_not_function_calling(context: str):
+async def get_structured_answer_not_functionCalling(context: str):
     # Step 1: send the conversation and available functions to GPT
     start_time = time.time()  
     print(tiktoken_len(context))
     try:
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the 'media's and 'place's from the input content in json, Dont' forget that the category of media must be the media type, not the place like restaurant, museum or other words associated to places. Dont' forget that category of place must be the place type, not the media like book, movies and other words associated to media type."},
@@ -556,7 +547,7 @@ async def get_title(context: str):
     print("get_title() is started")
     try:
         response = await title_client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the extracted title and brief overview from the input content."},
@@ -596,7 +587,7 @@ async def get_title(context: str):
 def get_primary_category(context:str):
     try:
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "please categorize items."},
@@ -609,8 +600,8 @@ def get_primary_category(context:str):
                     output result is below:
                      {primary_category1:[item1, item2, item3], primary_category2: [item4, item5, item6]}
                     Don't need to use all the primary categories and you just show the primary categories which has proper items.
-                    Last one, remember you can not find out the proper primary category of specific item, then you should give 'other' as primary category.
                     You should output this type as JSON.
+                    Lastly, if you are unable to determine the correct primary category for specific items, you should assign them as 'other'.
                     """
                 }
             ],
@@ -633,7 +624,7 @@ async def get_structured_media_answer(context: str):
     print("media function is started")
     try:
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get the 'media's from the input content."},
@@ -682,7 +673,7 @@ async def get_structured_place_answer(context: str):
     print("place function is started")
     try:
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4-0125-preview',
             max_tokens=2000,
             messages=[
                 {'role': 'system', 'content': "Get 'place's from the input content in json"},
@@ -754,4 +745,17 @@ def get_ocr_image_result(base64string):
         return result
     except Exception as error:
         print("Error on OCR: ",  error)
+        return None
+
+def get_transcription(audio_file):
+    print("Here's whisper API.")
+    try:
+        response = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=open(audio_file, "rb")
+        )
+        print(response.text)
+        return response.text    
+    except Exception as error:
+        print("Error on Whisper: ", error)
         return None

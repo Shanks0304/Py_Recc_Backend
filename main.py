@@ -1,9 +1,8 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-import app.Routers.chatbot as chatbot
-import app.Routers.reply_sms as reply_sms
+from .app.Routers import chatbot as route_chatbot
+from .app.Routers import reply_sms as route_reply_sms
 
 import uvicorn
 
@@ -18,10 +17,10 @@ app.add_middleware(
 )
 
 # FastAPI().include_router() method is used to include routes delcared in other files in the golbal route handler.
-app.include_router(chatbot.router, tags=["chatbot"])
-app.include_router(reply_sms.router, tags=["reply"])
+app.include_router(route_chatbot.router, tags=["chatbot"])
+app.include_router(route_reply_sms.router, tags=["reply"])
 
-app.mount("/static", StaticFiles(directory="./data"), name="static")
+# app.mount("/static", StaticFiles(directory="./data"), name="static")
 
 # define the route:
 @app.get("/", tags=["root"])
@@ -30,4 +29,4 @@ async def root():
 
 # define the entry point. In the entry point, using uvicorn to run server
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=6100, reload=True)
+    uvicorn.run("app", host="0.0.0.0", port=6100, reload=True)
