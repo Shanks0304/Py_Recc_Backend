@@ -110,7 +110,7 @@ async def extract_image_data(image: UploadFile = File(...)):
 @router.post("/transcript-audio-file")
 async def transcript_audio_file(file: UploadFile = File(...)):
     try:
-        with NamedTemporaryFile(delete=False, suffix=".opus") as temp_file:
+        with NamedTemporaryFile(delete=False, suffix=".m4a") as temp_file:
             content = await file.read()  # Read the file content
             temp_file.write(content)  # Write it to the temp file
             temp_file_path = temp_file.name 
